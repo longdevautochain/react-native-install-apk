@@ -1,74 +1,86 @@
-# react-native-install-apk(android only)
+# React Native APK Install Module (Modernized)
 
-[![npm](https://img.shields.io/npm/v/@isudaji/react-native-install-apk.svg?maxAge=3600&style=flat-square)](https://www.npmjs.com/package/@isudaji/react-native-install-apk?_blank)
-[![NPM downloads](https://img.shields.io/npm/dm/@isudaji/react-native-install-apk.svg?style=flat-square)](https://npmjs.org/package/@isudaji/react-native-install-apk)
+This project has been modernized to support Android 14+ (API 34), fixing issues with `FileUriExposedException` on Android 7+ and permission handling on Android 8+.
 
-## init
+## Features
 
-`your-app-name`
+- ✅ **Android 14+ Support**: Updated Gradle and Android SDK configurations.
+- ✅ **FileProvider Integration**: Built-in FileProvider to securely share APK files (fixes Android 7.0+ crash).
+- ✅ **Automatic Permissions**: Manifest includes `REQUEST_INSTALL_PACKAGES`.
+- ✅ **React Native Autolinking**: No need for manual `react-native link`.
+- ✅ **TypeScript Support**: Includes type definitions.
 
-## install
-`npm i @isudaji/react-native-install-apk --save`
+## Installation
 
-OR
+### From GitHub (Recommended for Fork)
 
-`yarn add @isudaji/react-native-install-apk`
+Since this is a custom fork, install it directly from the git repository:
 
-AND
+```bash
+# using npm
+npm install github:longdevautochain/react-native-install-apk#master
 
-`react-native link @isudaji/react-native-install-apk` **react-native <= 0.60.4**
+# using yarn
+yarn add github:longdevautochain/react-native-install-apk#master
+```
 
-### Manual installation
+## Usage
 
-#### Android
+### 1. Basic Usage
 
-1. Open up `android/app/src/main/java/[...]/MainApplication.java`
-  - Add `import com.apk.install.RNSdkInstallPackage;` to the imports at the top of the file
-  - Add `new RNSdkInstallPackage()` to the list returned by the `getPackages()` method
-2. Append the following lines to `android/settings.gradle`:
-    ```
-    include ':react-native-install-apk'
-    project(':react-native-install-apk').projectDir = new File(rootProject.projectDir,   '../node_modules/react-native-install-apk/android')
-    ```
-3. Insert the following lines inside the **dependencies** block in `android/app/build.gradle`:
-    ```
-      implementation project(':react-native-install-apk')
-    ```
+```javascript
+import InstallApk from "@isudaji/react-native-install-apk";
 
-## usage  
-    import { NativeModules } from 'react-native';  
-    NativeModules.InstallApk.install(path);  
+// The path must be an absolute path to the APK file on the device
+const apkPath = "/storage/emulated/0/Download/update.apk";
 
-## example code  
-you can use [react-native-fs](https://github.com/johanneslumpe/react-native-fs) to download the apk file:  
+InstallApk.install(apkPath);
+```
 
-    var filePath = RNFS.DocumentDirectoryPath + '/com.domain.example.apk';
-    var download = RNFS.downloadFile({
-        fromUrl: 'apk file download url',
-        toFile: filePath,
-        progress: res => {
-            console.log((res.bytesWritten / res.contentLength).toFixed(2));
-        },
-        progressDivider: 1
-    });
-    download.promise.then(result => {
-        if(result.statusCode == 200){
-            NativeModules.InstallApk.install(filePath);
-        }
-    });
+### 2. Download and Install (with `react-native-fs`)
 
-## publish
+```javascript
+import RNFS from "react-native-fs";
+import InstallApk from "@isudaji/react-native-install-apk";
+import { Platform } from "react-native";
 
-`npm publish --access public`
+const downloadAndInstall = async (url) => {
+  // Save to ExternalCachesDirectoryPath to ensure it's accessible
+  const filePath = RNFS.ExternalCachesDirectoryPath + "/update.apk";
 
-## Report Bug
+  const options = {
+    fromUrl: url,
+    toFile: filePath,
+    progress: (res) => {
+      console.log((res.bytesWritten / res.contentLength).toFixed(2));
+    },
+  };
 
-- `Invariant Violation: requireNativeComponent: "RNSScreen" was not found in the UIManager.`
+  RNFS.downloadFile(options).promise.then((res) => {
+    if (res.statusCode === 200) {
+      InstallApk.install(filePath);
+    }
+  });
+};
+```
 
-- `Could not find method compile() for arguments [project ':@isudaji/react-native-install-apk'] on object of type org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler.`
+本模組使用 `FileProvider` 安全地分享 APK 檔案給 Android 安裝程式：
 
-- `The project name '@isudaji/react-native-install-apk' must not contain any of the following characters: [/, \, :, <, >, ", ?, *, |]`
+- **Authority**: `${applicationId}.installapk.provider` (自動根據您的 App ID 生成，避免衝突)
+- **Path**: 支援外部儲存 (external path)、快取 (cache) 及 檔案目錄 (files)。
 
-- `Could not find method compile() for arguments [project ':react-native-install-apk'] on object of type org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler.`
+## 修改記錄 (Modernization Changes)
 
-- `Could not find method compile() for arguments [com.facebook.react:react-native:+] on object of type org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler.` **gradle 3.x**
+此 Fork 版本已進行以下修復：
+
+1. **Android Gradle Plugin**: 升級至現代版本。
+2. **Dependencies**: 將 `compile` 替換為 `implementation`。
+3. **Java Source**:
+   - 移除不安全的 `chmod 777`。
+   - 實作 `FileProvider.getUriForFile` 以支援 Android N+。
+   - 加入 `FLAG_GRANT_READ_URI_PERMISSION`。
+4. **Manifest**: 加入 Provider 定義及必要權限。
+
+---
+
+_Based on previous guide and modernization work._
