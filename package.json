@@ -3,6 +3,7 @@
   "version": "1.0.5",
   "description": "install .apk file (android only)",
   "main": "index.js",
+  "types": "index.d.ts",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
